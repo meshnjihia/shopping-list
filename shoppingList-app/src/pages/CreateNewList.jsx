@@ -5,6 +5,10 @@ import { HiChevronDoubleDown, HiChevronDoubleUp } from 'react-icons/hi'
 import { CgTrash } from 'react-icons/cg'
 
 import { v4 as uuidv4 } from 'uuid'
+
+import ReactModal from 'react-modal'
+
+
 const CreateNewList = () => {
   const [items, setItems] = useState(
     JSON.parse(localStorage.getItem('items')) || [],
@@ -12,6 +16,8 @@ const CreateNewList = () => {
   const [inputValue, setInputValue] = useState('')
   const [totalItemCount, setTotalItemCount] = useState(0)
   const [totalItemPrice, setTotalItemPrice] = useState(0)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   const handleAddItemClick = () => {
     if (!inputValue.trim()) {
@@ -69,6 +75,23 @@ const CreateNewList = () => {
     setTotalItemPrice(total)
   }
 
+  const handleDeleteItem = (index) => {
+    setIsConfirmOpen(true)
+    setItemToDelete(index)
+  }
+
+  const confirmDelete = () => {
+    const newItems = [...items]
+    newItems.splice(itemToDelete, 1)
+    setItems(newItems)
+    calcTotal()
+    calcTotalPrice()
+    setIsConfirmOpen(false)
+  }
+  const cancelDelete = () => {
+    setIsConfirmOpen(false)
+  }
+
   const handlePriceChange = (e, index) => {
     const newItems = [...items]
     newItems[index].price = e.target.value
@@ -92,6 +115,11 @@ const CreateNewList = () => {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleAddItemClick()
+              }
+            }}
             placeholder="Add an Item..."
             className="border-none bg-transparent text-primary font-medium w-full h-7 placeholder:text-primary placeholder:font-medium outline-none capitalize"
           />
@@ -105,28 +133,40 @@ const CreateNewList = () => {
         {/* item-list */}
         <div className="flex flex-col mx-auto px-5">
           {items.map((item, index) => (
-            <div key={item.id} className="grid grid-cols-4 gap-4 items-center border-b mb-4 pb-4 border-primary-light/60">
-              <div onClick={() => toggleSelected(index)} className="flex flex-col cursor-pointer text-white">
+            <div
+              key={item.id}
+              className="grid grid-cols-4 gap-4 items-center border-b mb-4 pb-4 border-primary-light/60"
+            >
+              <div
+                onClick={() => toggleSelected(index)}
+                className="flex flex-col cursor-pointer text-white"
+              >
                 {item.isSelected ? (
                   <div>
-                    <span className='text-sm text-stone-400'>marked</span>
-                    <div className='flex items-center '>
-                      <ImCheckboxChecked className='mr-1.5' />
-                      <span className='text-sm line-through'>{item.itemName}</span>
+                    <span className="text-sm text-stone-400">marked</span>
+                    <div className="flex items-center ">
+                      <ImCheckboxChecked className="mr-1.5" />
+                      <span className="text-sm line-through">
+                        {item.itemName}
+                      </span>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <span className='text-sm text-lime-500'>Unmarked</span>
-                    <div className='flex items-center'>
-                      <ImCheckboxUnchecked className='mr-1.5' />
-                      <span className='font-medium capitalize'>{item.itemName}</span>
+                    <span className="text-sm text-lime-500">Unmarked</span>
+                    <div className="flex items-center">
+                      <ImCheckboxUnchecked className="mr-1.5" />
+                      <span className="font-medium capitalize">
+                        {item.itemName}
+                      </span>
                     </div>
                   </div>
                 )}
               </div>
               <div className="bg-primary-light flex-col sm:flex-row  gap-4 items-center py-1 px-2 text-white rounded-xl justify-end">
-                <label className='text-xs' htmlFor="price">Price:</label>
+                <label className="text-xs" htmlFor="price">
+                  Price:
+                </label>
                 <input
                   type="number"
                   value={item.price}
@@ -141,7 +181,9 @@ const CreateNewList = () => {
                       onClick={() => handleQuantityDecrease(index)}
                     />
                   </button>
-                  <small className="mx-2 text-zinc-900 font-semibold">{item.quantity}</small>
+                  <small className="mx-2 text-zinc-900 font-semibold">
+                    {item.quantity}
+                  </small>
                   <button>
                     <HiChevronDoubleUp
                       onClick={() => handleQuantityIncrease(index)}
@@ -149,8 +191,12 @@ const CreateNewList = () => {
                   </button>
                 </div>
               </div>
-              <div className="flex justify-end">
-                <CgTrash size={25} className="" />
+              <div className="flex justify-end t rounded-md">
+                <CgTrash
+                  onClick={() => handleDeleteItem(index)}
+                  size={25}
+                  className="cursor-pointer text-red-600 bg-primary-light"
+                />
               </div>
             </div>
           ))}
@@ -172,6 +218,20 @@ const CreateNewList = () => {
           </div>
         </div>
       </div>
+
+      <ReactModal
+        isOpen={isConfirmOpen}
+        onRequestClose={cancelDelete}
+        ariaHideApp={false}
+        className="bg-white p-4 rounded-md"
+        overlayClassName="fixed top-0 left-0 w-full h-full bg-black bg-opacity-75 z-50 flex items-center justify-center"
+      >
+        <p>Are you sure you want to delete this item?</p>
+        <div className="flex justify-end gap-8 mt-4">
+          <button className='bg-red-400 px-2 py-1 rounded-md' onClick={confirmDelete}>Confirm</button>
+          <button className='bg-green-400 px-2 py-1 rounded-md' onClick={cancelDelete}>Cancel</button>
+        </div>
+      </ReactModal>
     </section>
   )
 }
